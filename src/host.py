@@ -1,21 +1,28 @@
 from abc import ABCMeta, abstractmethod
 from dut_interface import DutInterface
+import asyncio
+
+
 # Observable
 class Host(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is Host:
-            if any("__usb_list__" in B.__dict__ for B in C.__mro__):
-                return True
-        return NotImplemented
+        return (
+            hasattr(subclass, "get_device")
+            and callable(subclass.get_device)
+            and hasattr(subclass, "attach")
+            and callable(subclass.attach)
+            and hasattr(subclass, "detach")
+            and callable(subclass.detach)
+            and hasattr(subclass, "notify")
+            and callable(subclass.notify)
+            or NotImplemented
+        )
 
-    @abstractmethod    
-    def __usb_list__(self):
-        pass
-    
     @abstractmethod
-    def get_next_usb_device(self):
+    async def get_device(self):
         pass
+
     @abstractmethod
     def attach(self, observer: DutInterface) -> None:
         """
@@ -31,7 +38,7 @@ class Host(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def notify(self) -> None:
+    async def notify(self) -> None:
         """
         Notify all observers about an event.
         """

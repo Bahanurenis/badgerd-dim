@@ -7,19 +7,21 @@ from dut_interface import DutInterface
 from sdwire import SDWireC
 
 logger = logging.getLogger(__name__)
-def get_device(dut_type:str):
+
+
+def get_device(dut_type: str):
     # print("dut type: ", f"{dut_type}")
     if dut_type == "1":
         return SDWireC()
-    # elif .. 
-    else: 
+    # elif ..
+    else:
         return None
 
 
 if __name__ == "__main__":
     host: Host = None
-    #TODO: Make dut None in the below in product code
-    dut:DutInterface = SDWireC()
+    # TODO: Make dut None in the below in product code
+    dut: DutInterface = SDWireC()
 
     # TODO: Activate below in product
     # print("Please choose the device you want to initialize and press Enter:\n",
@@ -31,13 +33,13 @@ if __name__ == "__main__":
     #     answer: str = input()
     #     if answer in ["Y","y", "Yes", "yes", "[Y]", "[y]"]:
     #         print("Please choose the device you want to initialize and press Enter:\n",
-    #         "Badgerd SDWireC: 1,\n", 
+    #         "Badgerd SDWireC: 1,\n",
     #         "Badgerd USB Mux: 2\n")
     #         dut_type_input = input()
     #         dut = get_device(dut_type_input)
     #     elif answer in ["N","n", "No", "no", "[N]", "[n]"]:
     #         print("Good Bye!")
-    #         exit() 
+    #         exit()
 
     if platform.system() == "Windows":
         host: Host = WindowsHost()
@@ -45,11 +47,11 @@ if __name__ == "__main__":
     elif platform.system() == "Linux":
         host = LinuxHost()
         print("Linux")
-    else: 
+    else:
         raise Exception("Unknown Operating System")
- 
+
     # for device in host.get_next_usb_device():
     #     pass
-        # dut.initialize(device.vendor_id
+    # dut.initialize(device.vendor_id
 
     pass

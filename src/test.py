@@ -3,6 +3,7 @@ from ctypes import *
 import wmi
 import asyncio
 import sys, os
+
 #
 # Device change events (WM_DEVICECHANGE wParam)
 #
@@ -37,7 +38,7 @@ class DEV_BROADCAST_HDR(Structure):
     _fields_ = [
         ("dbch_size", DWORD),
         ("dbch_devicetype", DWORD),
-        ("dbch_reserved", DWORD)
+        ("dbch_reserved", DWORD),
     ]
 
 
@@ -47,14 +48,14 @@ class DEV_BROADCAST_VOLUME(Structure):
         ("dbcv_devicetype", DWORD),
         ("dbcv_reserved", DWORD),
         ("dbcv_unitmask", DWORD),
-        ("dbcv_flags", WORD)
+        ("dbcv_flags", WORD),
     ]
 
 
 def drive_from_mask(mask):
     n_drive = 0
     while 1:
-        if (mask & (2 ** n_drive)):
+        if mask & (2**n_drive):
             return n_drive
         else:
             n_drive += 1
@@ -109,35 +110,36 @@ class Notification:
     #     return 1
 
     async def on_usb_connect(self):
-        raw_wql = "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA \'Win32_USBHub\'"
+        raw_wql = "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_USBHub'"
         c = wmi.WMI()
         # watcher = c.watch_for(raw_wql=raw_wql, notification_type="Creation" , wmi_class="Win32_USBHub", delay_secs=1)
         watcher = c.watch_for(raw_wql=raw_wql)
         # await asyncio.sleep(1)
         print("on_usb_connect is called", watcher())
         return watcher()
-    
+
     async def listener(self):
         while True:
-            try: 
+            try:
                 device = await asyncio.gather(self.on_usb_connect())
-                # await asyncio.sleep(1) 
+                # await asyncio.sleep(1)
                 print("device: ", device)
                 print("inside listener")
             except KeyboardInterrupt:
-                print('Interrupted')
-                try: 
+                print("Interrupted")
+                try:
                     sys.exit(130)
                 except SystemExit:
                     os._exit(130)
-                
+
     # async def notify(self):
     #     pass
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     print("Heluu")
     ob = Notification()
-   
+
     try:
         # loop = asyncio.new_event_loop()
         # asyncio.set_event_loop(loop=loop)
@@ -145,22 +147,21 @@ if __name__ == '__main__':
         # loop.run_forever()
         asyncio.run(ob.listener())
     except KeyboardInterrupt:
-        print('Interrupted')
-        try: 
+        print("Interrupted")
+        try:
             sys.exit(130)
         except SystemExit:
             os._exit(130)
-    for i in range(1,10):
+    for i in range(1, 10):
         print(i)
     # w = Notification()
     # win32gui.PumpMessages()
-
 
     # raw_wql = "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA \'Win32_USBHub\'"
     # c = wmi.WMI()
     # # watcher = c.watch_for(raw_wql=raw_wql, notification_type="Creation" , wmi_class="Win32_USBHub", delay_secs=1)
     # watcher = c.watch_for(raw_wql=raw_wql)
-    # while True: 
+    # while True:
     #     usb = watcher()
     #     print(usb)
     #     time.sleep(.1)
