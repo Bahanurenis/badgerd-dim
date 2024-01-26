@@ -8,20 +8,16 @@ class Host(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, C):
         return (
-            hasattr(subclass, "get_device")
-            and callable(subclass.get_device)
-            and hasattr(subclass, "attach")
+            hasattr(subclass, "attach")
             and callable(subclass.attach)
+            and hasattr(subclass, "main")
+            and callable(subclass.main)
             and hasattr(subclass, "detach")
             and callable(subclass.detach)
             and hasattr(subclass, "notify")
             and callable(subclass.notify)
             or NotImplemented
         )
-
-    @abstractmethod
-    async def get_device(self):
-        pass
 
     @abstractmethod
     def attach(self, observer: DutInterface) -> None:
@@ -42,4 +38,8 @@ class Host(metaclass=ABCMeta):
         """
         Notify all observers about an event.
         """
+        pass
+
+    @abstractmethod
+    async def main(self):
         pass

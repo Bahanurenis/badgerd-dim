@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 import asyncio
 
 
-class DutInterface(metaclass=abc.ABCMeta):
+class DutInterface(metaclass=ABCMeta):
     """A meta class for USB devices"""
 
     # def __instancecheck__(cls, instance):
@@ -22,6 +22,9 @@ class DutInterface(metaclass=abc.ABCMeta):
             and callable(subclass.update)
             or NotImplemented
         )
+
+    def __init__(self, os: str):
+        self._os = os
 
     @abstractmethod
     def initialize(self):
