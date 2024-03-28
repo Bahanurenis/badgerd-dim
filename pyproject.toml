@@ -5,12 +5,19 @@ description = "Badgerd-Embedded device initialization manager"
 authors = ["Bahanurenis <bahanurenis@gmail.com>"]
 license = "GPL-3.0-or-later"
 readme = "README.md"
+packages = [
+  {include = "*", from="src"}
+]
+
+[tool.poetry.scripts]
+badgerd-dim = 'main:main'
 
 [tool.poetry.dependencies]
 python = "^3.11"
 pyudev = {version="^0.24.1", markers="platform_system == 'Linux'"}
 WMI = {version="^1.5.1", markers="platform_system == 'Windows'"}
 janus = {version="^1.0.0", markers="platform_system == 'Linux'"}
+colorama = "^0.4.6"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.1.1"

@@ -28,8 +28,7 @@ def get_device(dut_type: str):
     else:
         return None
 
-
-if __name__ == "__main__":
+def main():
     host: Host = None
     dut: DutInterface = None
     badgerd_device: BadgerdDevice = BadgerdDevice.UNKNOWN
@@ -97,3 +96,8 @@ if __name__ == "__main__":
             print("\nSystem is terminating")
     else:
         raise Exception("Unknown Operating System")
+
+
+
+if __name__ == "__main__":
+    main()
