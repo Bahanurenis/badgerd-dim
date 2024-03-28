@@ -4,6 +4,9 @@ from enum import Enum, unique
 import logging
 import platform
 import sys
+
+from colorama import init, Fore, Back, Style
+
 from host import Host
 from windows_host import WindowsHost
 from linux_host import LinuxHost
@@ -40,48 +43,54 @@ def main():
             "Badgerd SDWireC: 1,\n",
             "Badgerd USB Mux: 2\n",
         )
-        dut_type_input: str = input()
-        serial_no_input = ""
-        if dut_type_input == "1":
-            badgerd_device = BadgerdDevice.SDWIREC
-            print("Please enter a number to start initilization with it: ")
-            serial_no_input = input()
-            while int(serial_no_input) <= 0 or int(serial_no_input) > 1000:
-                print("Please enter a valid number (>1, <=1000)")
+        try:
+            dut_type_input: str = input()
+            serial_no_input = ""
+            if dut_type_input == "1":
+                badgerd_device = BadgerdDevice.SDWIREC
+                print("Please enter a number to start initilization with it: ")
                 serial_no_input = input()
-            break
-        elif dut_type_input == "2":
-            badgerd_device = BadgerdDevice.USBMUX
-            break
-        else:
-            badgerd_device = BadgerdDevice.UNKNOWN
-            print(
-                "Device type couldn't recognized. Enter Yes[Y] to continue and choose a valid device, enter No[N] to quit\n"
-            )
-            answer = ""
-            while answer not in [
-                "Y",
-                "y",
-                "Yes",
-                "yes",
-                "[Y]",
-                "[y]",
-                "N",
-                "n",
-                "No",
-                "no",
-                "[N]",
-                "[n]",
-            ]:
-                answer: str = input()
-                if answer in ["Y", "y", "Yes", "yes", "[Y]", "[y]"]:
-                    pass
-                elif answer in ["N", "n", "No", "no", "[N]", "[n]"]:
-                    print("Good Bye!")
-                    exit()
-                else:
-                    print("Press Y for continue or N for exit")
-    print(badgerd_device.name)
+                while int(serial_no_input) <= 0 or int(serial_no_input) > 1000:
+                    print("Please enter a valid number (>1, <=1000)")
+                    serial_no_input = input()
+                break
+            elif dut_type_input == "2":
+                badgerd_device = BadgerdDevice.USBMUX
+                break
+            else:
+                badgerd_device = BadgerdDevice.UNKNOWN
+                print(
+                    "Device type couldn't recognized. Enter Yes[Y] to continue and choose a valid device, enter No[N] to quit\n"
+                )
+                answer = ""
+                while answer not in [
+                    "Y",
+                    "y",
+                    "Yes",
+                    "yes",
+                    "[Y]",
+                    "[y]",
+                    "N",
+                    "n",
+                    "No",
+                    "no",
+                    "[N]",
+                    "[n]",
+                ]:
+                    answer: str = input()
+                    if answer in ["Y", "y", "Yes", "yes", "[Y]", "[y]"]:
+                        pass
+                    elif answer in ["N", "n", "No", "no", "[N]", "[n]"]:
+                        print("Good Bye!")
+                        exit()
+                    else:
+                        print("Press Y for continue or N for exit")
+        except KeyboardInterrupt:
+            print("System is terminating...")
+            sys.exit()
+    print(
+        f"{Fore.LIGHTBLUE_EX} BDIM starts to initialize {badgerd_device.name} devices {Style.RESET_ALL}"
+    )
     if platform.system() == "Windows":
         host: Host = WindowsHost()
         print("Windows")
