@@ -113,7 +113,7 @@ class SDWireC(DutInterface):
                 partition_path = item.strip("[]")
                 print(f"partition path: {partition_path}")
                 break
-        if partition_path == "": 
+        if partition_path == "":
              print("Storage couldn't find, --ts mode test will be skipped")
         else:
             destination = "/dev/" + partition_path + "1"
@@ -127,7 +127,7 @@ class SDWireC(DutInterface):
                 )
                 if write_2KkB_test_subprocess.returncode == 0:
                     print(write_2KkB_test_subprocess.stdout)
-                    # Read the data 
+                    # Read the data
                     read_2KkB_test_subprocess = subprocess.run(
                     f'sudo {" ".join(read_cmd)}', capture_output=True,text=True, shell=True)
                     if read_2KkB_test_subprocess.returncode == 0:
@@ -148,7 +148,7 @@ class SDWireC(DutInterface):
                         print(read_1GB_test_subprocess.stdout)
             await asyncio.sleep(1)
             print("--ts test is finished")
-    
+
     async def dut_test_linux(self,device:USBDevice):
         print(Fore.YELLOW, "================ DUT mode test ===============\n")
         # ts_sdwire_cmd = ["sd-mux-ctrl", f"--device-serial={device.serial_no}", "--ts"]
@@ -181,8 +181,8 @@ class SDWireC(DutInterface):
         #     l_line:list = []
         #     partition_path:str = ""
         #     dmesg_sub_process = subprocess.run( f'sudo {" ".join(dmesg_h_read_cmd)}',capture_output=True, text=True, shell=True)
-        #     await asyncio.sleep(1) 
-        
+        #     await asyncio.sleep(1)
+
         #     for line in dmesg_sub_process.stdout.splitlines()[::-1]:
         #         if "detected capacity change from 0 to" in line:
         #             l_line = line.split()
@@ -193,7 +193,7 @@ class SDWireC(DutInterface):
         #             partition_path = item.strip(":")
         #             print(partition_path)
 
-        #     if partition_path == "": 
+        #     if partition_path == "":
         #         print("storage couldn't find, test will be skipped")
         #     else:
         #         mounth_path = "/dev/" + partition_path + "1"
@@ -212,7 +212,7 @@ class SDWireC(DutInterface):
         #                 text=True,
         #                 capture_output=True,
         #             )
-            
+
         #         if dut_sdwire_process.returncode == 0:
         #             create_test_process = subprocess.run(
         #                 f"sudo touch /media/test/sdwiretest", shell=True
@@ -244,11 +244,11 @@ class SDWireC(DutInterface):
         #                     print("test file removed successfully")
         #         umount_process = subprocess.run(f'sudo {" ".join(umount_cmd)}', shell=True)
         #     await asyncio.sleep(1)
-        #     print("DUT test is finished")   
-    
+        #     print("DUT test is finished")
+
 
     async def update(self, device: USBDevice):
-        if device.serial_no == "0403" and device.serial_no.startswith("bdgrd_sdwirec") == False:
+        if device.vendor_id == "0403" and device.serial_no.startswith("bdgrd_sdwirec") == False:
             initialize_task = asyncio.create_task(self.initialize(device=device))
             await initialize_task
         elif device.serial_no.startswith("bdgrd_sdwirec") == True:
