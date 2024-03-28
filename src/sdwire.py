@@ -41,7 +41,7 @@ class SDWireC(DutInterface):
                     )
                     print(completed_process.stdout)
                     self._serial_number += 1
-                    print(self._serial_number)
+                    print(f"Next serial id will be {self._serial_number}")
                 else:
                     print(completed_process.stderr)
             except subprocess.CalledProcessError as e:
@@ -124,13 +124,12 @@ class SDWireC(DutInterface):
             "if=/dev/zero",
             f"of={destination}",
             f"bs={data_size}",
-            f"count={count}",
-            "oflag=direct",
+            f"count={count}"
         ]
         write_test_subprocess = subprocess.run(
             f'sudo {" ".join(write_dd_cmd)}',
             capture_output=True,
-            universal_newlines=True,
+           text=True,
             shell=True,
         )
         await asyncio.sleep(2)
@@ -157,7 +156,7 @@ class SDWireC(DutInterface):
         ts_mode_task = asyncio.create_task(
             self.change_device_mode(device.serial_no, "ts")
         )
-        await ts_mode_tasks
+        await ts_mode_task
         ts_mode_returncode = ts_mode_task.result()
         await asyncio.sleep(1)
         find_partition_task = asyncio.create_task(self.find_sdcard_partition())
