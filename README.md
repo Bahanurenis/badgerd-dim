@@ -6,11 +6,19 @@ Thanks to [pyudev](https://pyudev.readthedocs.io/en/latest/#documentation ), [ja
 
 BDIM is aiming make the initialization process for Badgerd-Devices, but the usage and purpose can be generalized. Because the structure is independent between USB devices and subprocess commands. 
 
-## Usage: 
-Usage is as simple as watching TV (well, it depends I know). Basically you need to clone the repo and run the main.py from src dir. 
-- It will download the necessary packages according to your OS
-- You need to have Badgerd sd-mux-ctrl 
+## Requirements: 
+Usage is as simple as watching TV (well, it depends I know). Basically you need to clone the repo
+* Run the below commands for dependencies: 
+    - python3 -m venv .venv (**Recommended)
+    - source .venv/bin/activate(**Recommended)
+    - pip install poetry (!if you don't have)
+    - poetry install (It will install all required dependencies according to your OS)
 
+* You need to have Badgerd sd-mux-ctrl for SDWireC initialization:
+    - Follow the steps on [QuickStart Page](https://badgerd.nl/sdwirec/#quick-start)
+## Usage:
+Simply run the below command on the terminal:
+- badgerd-dim
 It will ask you basic questions, I choose the SDWireC for below example:
 ```
 Please choose the device you want to initialize and press Enter:
