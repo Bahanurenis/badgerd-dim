@@ -16,7 +16,8 @@ class SDWireC(DutInterface):
         if self._os == "Linux":
             # call linux_initialize subprocess
             print(
-                Fore.BLUE, "Initialization is starting, please don't remove the device until initilization is done"
+                Fore.BLUE,
+                "Initialization is starting, please don't remove the device until initilization is done",
             )
             initialization_cmd = [
                 "sd-mux-ctrl",
@@ -34,8 +35,9 @@ class SDWireC(DutInterface):
                     shell=True,
                 )
                 if completed_process.returncode == 0:
-                    print(Fore.GREEN,
-                     f"Initialization is done, new serial id will become bdgrd_sdwirec_{self._serial_number}\n"
+                    print(
+                        Fore.GREEN,
+                        f"Initialization is done, new serial id will become bdgrd_sdwirec_{self._serial_number}\n",
                     )
                     print(completed_process.stdout)
                     self._serial_number += 1
@@ -61,194 +63,140 @@ class SDWireC(DutInterface):
                 completed_process.returncode == 0
                 and device.serial_no in completed_process.stdout
             ):
-                print(Fore.GREEN, "New Badgerd SDWireC is found:", completed_process.stdout)
+                print(
+                    Fore.GREEN,
+                    "New Badgerd SDWireC is found:",
+                    completed_process.stdout,
+                )
             else:
-                print(Fore.RED, "Badgerd SDWireC is not found", completed_process.stderr)
+                print(
+                    Fore.RED, "Badgerd SDWireC is not found", completed_process.stderr
+                )
 
     async def test(self, device: USBDevice):
         if self._os == "Linux":
             print(Fore.BLUE, "Tests are starting...")
             partition_path = ""
-            await self.ts_test_linux(
-                device=device
-                )
+            await self.ts_test_linux(device=device)
             await asyncio.sleep(2)
-            await self.dut_test_linux(
-                        device=device
-                    )
+            # await self.dut_test_linux(device=device)
             print(Fore.RESET, "test is finished, you can remove the device")
             await asyncio.sleep(2)
 
-    async def ts_test_linux(self, device: USBDevice):
-        print(Fore.MAGENTA, "================ TS mode test ===============\n")
-        ts_sdwire_cmd = ["sd-mux-ctrl", f"--device-serial={device.serial_no}", "--ts"]
-        dut_sdwire_cmd = ["sd-mux-ctrl", f"--device-serial={device.serial_no}", "--dut"]
-        dmesg_h_read_cmd = ["dmesg", "--time-format=ctime"]
-         # Pass the dut mode
-        dut_sdwire_process = subprocess.run(
-            f'sudo {" ".join(dut_sdwire_cmd)}',
+    async def change_device_mode(self,  device_serial_no:str, mode:str) -> int:
+        _cmd = ["sd-mux-ctrl", f"--device-serial={device_serial_no}", f"--{mode}"]
+        sdwire_mode_change_subprocess = subprocess.run(
+            f'sudo {" ".join(_cmd)}',
             text=True,
             capture_output=True,
             shell=True,
         )
         await asyncio.sleep(1)
+        return sdwire_mode_change_subprocess.returncode
 
-        ts_sdwire_process = subprocess.run(
-        f'sudo {" ".join(ts_sdwire_cmd)}',
-        text=True,
-        capture_output=True,
-        shell=True,)
-        await asyncio.sleep(2)
-        print("SD storage is checking...\n")
-        l_line:list = []
-        partition_path:str = ""
-        dmesg_sub_process = subprocess.run( f'sudo {" ".join(dmesg_h_read_cmd)}',capture_output=True, text=True, shell=True)
-        await asyncio.sleep(1)
+    async def find_sdcard_partition(self):
+        print("SD card is checking...\n")
+        dmesg_h_read_cmd = ["dmesg", "--time-format=ctime"]
+        l_line: list = []
+        partition_path: str = ""
+        dmesg_sub_process = subprocess.run(
+            f'sudo {" ".join(dmesg_h_read_cmd)}',
+            capture_output=True,
+            text=True,
+            shell=True,
+        )
         for line in dmesg_sub_process.stdout.splitlines()[::-1]:
-           if "Attached SCSI removable disk" in line:
-            l_line = line.split()
-            break
+            if "Attached SCSI removable disk" in line:
+                l_line = line.split()
+                break
         for item in l_line:
             if "[sd" in item:
                 partition_path = item.strip("[]")
                 print(f"partition path: {partition_path}")
                 break
+        return partition_path
+
+    async def write_data_to_device(self, destination: str, data_size: str, count: str):
+        write_dd_cmd = [
+            "dd",
+            "if=/dev/zero",
+            f"of={destination}",
+            f"bs={data_size}",
+            f"count={count}",
+            "oflag=direct",
+        ]
+        write_test_subprocess = subprocess.run(
+            f'sudo {" ".join(write_dd_cmd)}',
+            capture_output=True,
+            universal_newlines=True,
+            shell=True,
+        )
+        await asyncio.sleep(2)
+        print(f"test result: {write_test_subprocess.stdout}")
+        return write_test_subprocess.returncode
+
+    async def read_data_from_device(self, destination: str):
+        read_hdparm_cmd = ["hdparm", "-Tt", f"{destination}"]
+        read_test_subprocess = subprocess.run(
+            f'sudo {" ".join(read_hdparm_cmd)}',
+            capture_output=True,
+            universal_newlines=True,
+            shell=True,
+        )
+        await asyncio.sleep(1)
+        print(f"read performance result: {read_test_subprocess.stdout}")
+
+    async def ts_test_linux(self, device: USBDevice):
+        print("================ TS mode test ===============\n")
+        dut_mode_task = asyncio.create_task(
+            self.change_device_mode(device.serial_no, "dut")
+        )
+        await dut_mode_task
+        ts_mode_task = asyncio.create_task(
+            self.change_device_mode(device.serial_no, "ts")
+        )
+        await ts_mode_tasks
+        ts_mode_returncode = ts_mode_task.result()
+        await asyncio.sleep(1)
+        find_partition_task = asyncio.create_task(self.find_sdcard_partition())
+        await find_partition_task
+        partition_path: str = find_partition_task.result()
+        await asyncio.sleep(1)
         if partition_path == "":
-             print("Storage couldn't find, --ts mode test will be skipped")
+            print("Storage couldn't find, --ts mode test will skip...")
         else:
-            destination = "/dev/" + partition_path + "1"
-            if ts_sdwire_process.returncode == 0:
-                write_2KkB_cmd = ["dd", "if=/dev/zero", f"of={destination}", "bs=1K", "count=2000", "oflag=direct", "status=progress"]
-                write_1GB_cmd = ["dd", "if=/dev/zero", f"of={destination}", "bs=1G", "count=1", "oflag=direct", "status=progress"]
-                read_cmd = ["hdparm", "-Tt", f"{destination}"]
+            destination = "/dev/" + partition_path
+            if ts_mode_returncode == 0:
                 print("Test result of writing 2000 KB:")
-                write_2KkB_test_subprocess = subprocess.run(
-                    f'sudo {" ".join(write_2KkB_cmd)}', capture_output=True,universal_newlines=True, shell=True
+                write_task = asyncio.create_task(
+                    self.write_data_to_device(destination, "1K", "2000")
                 )
-                if write_2KkB_test_subprocess.returncode == 0:
-                    print(write_2KkB_test_subprocess.stdout)
-                    # Read the data
-                    read_2KkB_test_subprocess = subprocess.run(
-                    f'sudo {" ".join(read_cmd)}', capture_output=True,text=True, shell=True)
-                    if read_2KkB_test_subprocess.returncode == 0:
-                        print("Test result of reading  2000 KB:")
-                        print(read_2KkB_test_subprocess.stdout)
+                await write_task
+                write_2KkB_test_returncode = write_task.result()
+                if write_2KkB_test_returncode == 0:
+                    print(
+                        "Data has been written successfully. Reading test will start..."
+                    )
+                    read_task = asyncio.create_task(
+                        self.read_data_from_device(destination)
+                    )
+                    await read_task
                 await asyncio.sleep(1)
-                print("Test result of writing 1GB data: ")
-                write_1GB_test_subprocess = subprocess.run(
-                    f'sudo {" ".join(write_1GB_cmd)}', capture_output=True,text=True, shell=True
-                )
-                if write_1GB_test_subprocess.returncode == 0:
-                    print(write_1GB_test_subprocess.stdout)
-                    # Read data
-                    read_1GB_test_subprocess = subprocess.run(
-                    f'sudo {" ".join(read_cmd)}', capture_output=True,text=True, shell=True)
-                    if read_1GB_test_subprocess.returncode == 0:
-                        print("Test result of reading  1GB:")
-                        print(read_1GB_test_subprocess.stdout)
+                # print("Test result of writing 1GB data: ")
+                # write_1GB_test_returncode = self.write_data_to_device(
+                #     destination, "1GB", "1"
+                # )
+                # if rite_1GB_test_returncode == 0:
+                #     self.read_data_from_device(destination)
             await asyncio.sleep(1)
             print("--ts test is finished")
 
-    async def dut_test_linux(self,device:USBDevice):
-        print(Fore.YELLOW, "================ DUT mode test ===============\n")
-        # ts_sdwire_cmd = ["sd-mux-ctrl", f"--device-serial={device.serial_no}", "--ts"]
-        # dut_sdwire_cmd = ["sd-mux-ctrl", f"--device-serial={device.serial_no}", "--dut"]
-        # dmesg_h_read_cmd = ["dmesg", "--time-format=ctime"]
-        # answer:str = ""
-        #  # Pass the ts mode
-        # ts_sdwire_process = subprocess.run(
-        #     f'sudo {" ".join(ts_sdwire_cmd)}',
-        #     text=True,
-        #     capture_output=True,
-        #     shell=True,
-        # )
-        # await asyncio.sleep(1)
-
-        # dut_sdwire_process = subprocess.run(
-        # f'sudo {" ".join(dut_sdwire_cmd)}',
-        # text=True,
-        # capture_output=True,
-        # shell=True,)
-        # await asyncio.sleep(2)
-        # print(Fore.BLUE, "Please check blue led is activated on Badgerd SDWireC****")
-        # print(Fore.YELLOW, "Placed the SDWireC to SD card reader")
-        # print("Attached the SDCard reader to the device...")
-        # await asyncio.sleep(1)
-        # answer = input("Please press 'y' when you are done: ")
-        # if answer == 'y' or answer == 'Y':
-        #     print("SD storage is checking...\n")
-        #     await asyncio.sleep(1)
-        #     l_line:list = []
-        #     partition_path:str = ""
-        #     dmesg_sub_process = subprocess.run( f'sudo {" ".join(dmesg_h_read_cmd)}',capture_output=True, text=True, shell=True)
-        #     await asyncio.sleep(1)
-
-        #     for line in dmesg_sub_process.stdout.splitlines()[::-1]:
-        #         if "detected capacity change from 0 to" in line:
-        #             l_line = line.split()
-        #             break
-        #     for item in l_line:
-        #         print(item, end=" ")
-        #         if "sd" in item:
-        #             partition_path = item.strip(":")
-        #             print(partition_path)
-
-        #     if partition_path == "":
-        #         print("storage couldn't find, test will be skipped")
-        #     else:
-        #         mounth_path = "/dev/" + partition_path + "1"
-        #         mount_cmd = ["mount", f"{mounth_path}", "/media/test"]
-        #         umount_cmd = ["umount", "/media/test"]
-        #         print(f"/media/test will be mount with {mounth_path}")
-        #         mount_process = subprocess.run(
-        #             f'sudo {" ".join(mount_cmd)}', shell=True, text=True, capture_output=True
-        #         )
-        #         if mount_process.returncode != 0:
-        #             print("Unmount process is starting")
-        #             umount_process = subprocess.run(f'sudo {" ".join(umount_cmd)}', shell=True,text=True,capture_output=True)
-        #             mount_process = subprocess.run(
-        #                 f'sudo {" ".join(mount_cmd)}',
-        #                 shell=True,
-        #                 text=True,
-        #                 capture_output=True,
-        #             )
-
-        #         if dut_sdwire_process.returncode == 0:
-        #             create_test_process = subprocess.run(
-        #                 f"sudo touch /media/test/sdwiretest", shell=True
-        #             )
-        #             if create_test_process.returncode == 0:
-        #                 print("sudo touch /media/test/sdwiretest")
-        #                 print("...................................\n")
-        #                 check_test_process = subprocess.run(
-        #                     "ls /media/test", shell=True, text=True, capture_output=True
-        #                 )
-        #                 print("ls /media/test\n", check_test_process.stdout)
-        #                 if check_test_process.returncode == 0 and "sdwiretest" in check_test_process.stdout.split("\n"):
-        #                     print("test file was created successfully in ts mode")
-        #                     print("sudo rm /media/test/sdwiretest\n sdwiretest file will be removed..")
-        #                     remove_test_process = subprocess.run(
-        #                         f"sudo rm /media/test/sdwiretest",
-        #                         shell=True,
-        #                         text=True,
-        #                         capture_output=True,
-        #                     )
-        #                 check_remove_process = subprocess.run(
-        #                     "ls /media/test", shell=True, text=True, capture_output=True
-        #                 )
-        #                 print("ls /media/test\n ", check_remove_process.stdout)
-        #                 if (
-        #                     remove_test_process.returncode == 0
-        #                     and "sdwiretest" not in check_remove_process.stdout.split("\n")
-        #                 ):
-        #                     print("test file removed successfully")
-        #         umount_process = subprocess.run(f'sudo {" ".join(umount_cmd)}', shell=True)
-        #     await asyncio.sleep(1)
-        #     print("DUT test is finished")
-
-
+   
     async def update(self, device: USBDevice):
-        if device.vendor_id == "0403" and device.serial_no.startswith("bdgrd_sdwirec") == False:
+        if (
+            device.vendor_id == "0403"
+            and device.serial_no.startswith("bdgrd_sdwirec") == False
+        ):
             initialize_task = asyncio.create_task(self.initialize(device=device))
             await initialize_task
         elif device.serial_no.startswith("bdgrd_sdwirec") == True:
@@ -264,5 +212,5 @@ if __name__ == "__main__":
     sdwire_test = SDWireC("Linux", 100)
     # sdwire_test.test()
     logging.info("Hello Moto")
-    asyncio.run(sdwire_test.test())
+    asyncio.run(sdwire_test.ts_test_linux())
     pass
