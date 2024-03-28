@@ -28,6 +28,7 @@ def get_device(dut_type: str):
     else:
         return None
 
+
 def main():
     host: Host = None
     dut: DutInterface = None
@@ -45,7 +46,7 @@ def main():
             badgerd_device = BadgerdDevice.SDWIREC
             print("Please enter a number to start initilization with it: ")
             serial_no_input = input()
-            while int(serial_no_input) <= 0 or int(serial_no_input)>1000:
+            while int(serial_no_input) <= 0 or int(serial_no_input) > 1000:
                 print("Please enter a valid number (>1, <=1000)")
                 serial_no_input = input()
             break
@@ -96,7 +97,6 @@ def main():
             print("\nSystem is terminating")
     else:
         raise Exception("Unknown Operating System")
-
 
 
 if __name__ == "__main__":

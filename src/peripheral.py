@@ -1,4 +1,3 @@
-
 class USBDevice:
     def __init__(self):
         self._vendor_id = ""
@@ -33,7 +32,6 @@ class USBDevice:
     @serial_no.setter
     def serial_no(self, value):
         self._serial_number = value
-
 
     def reset_device(self):
         self._vendor_id = ""

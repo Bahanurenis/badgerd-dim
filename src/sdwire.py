@@ -68,10 +68,12 @@ class SDWireC(DutInterface):
                     "New Badgerd SDWireC is found:",
                     completed_process.stdout,
                 )
+
             else:
                 print(
                     Fore.RED, "Badgerd SDWireC is not found", completed_process.stderr
                 )
+        print(Fore.RESET, "")
 
     async def test(self, device: USBDevice):
         if self._os == "Linux":
@@ -83,7 +85,7 @@ class SDWireC(DutInterface):
             print(Fore.RESET, "test is finished, you can remove the device")
             await asyncio.sleep(2)
 
-    async def change_device_mode(self,  device_serial_no:str, mode:str) -> int:
+    async def change_device_mode(self, device_serial_no: str, mode: str) -> int:
         _cmd = ["sd-mux-ctrl", f"--device-serial={device_serial_no}", f"--{mode}"]
         sdwire_mode_change_subprocess = subprocess.run(
             f'sudo {" ".join(_cmd)}',
@@ -191,7 +193,6 @@ class SDWireC(DutInterface):
             await asyncio.sleep(1)
             print("--ts test is finished")
 
-   
     async def update(self, device: USBDevice):
         if (
             device.vendor_id == "0403"
